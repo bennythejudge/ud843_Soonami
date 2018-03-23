@@ -20,6 +20,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
 
     /** URL to query the USGS dataset for earthquake information */
     private static final String USGS_REQUEST_URL =
-            "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2012-01-01&endtime=2012-12-01&minmagnitude=6";
+            "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2018-01-01&endtime=2018-03-23&minmagnitude=2";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,6 +102,7 @@ public class MainActivity extends AppCompatActivity {
      * update the UI with the first earthquake in the response.
      */
     private class TsunamiAsyncTask extends AsyncTask<URL, Void, Event> {
+
 
         @Override
         protected Event doInBackground(URL... urls) {
@@ -162,10 +164,19 @@ public class MainActivity extends AppCompatActivity {
                 urlConnection.setReadTimeout(10000 /* milliseconds */);
                 urlConnection.setConnectTimeout(15000 /* milliseconds */);
                 urlConnection.connect();
-                inputStream = urlConnection.getInputStream();
-                jsonResponse = readFromStream(inputStream);
+                int rc = urlConnection.getResponseCode();
+                if (rc == 200) {
+                    inputStream = urlConnection.getInputStream();
+                    jsonResponse = readFromStream(inputStream);
+                } else {
+                  Log.e("makeHttpRequest",
+                          "Got responseCode: " + rc + " for URL: " + url);
+                }
             } catch (IOException e) {
                 // TODO: Handle the exception
+                Log.e("makeHttpRequest",
+                        "IOException: " + String.valueOf(e));
+
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
@@ -183,9 +194,12 @@ public class MainActivity extends AppCompatActivity {
          * whole JSON response from the server.
          */
         private String readFromStream(InputStream inputStream) throws IOException {
+            // String is immutable so to build a String one character at a time we need this one
             StringBuilder output = new StringBuilder();
             if (inputStream != null) {
+                // read a single character at a time
                 InputStreamReader inputStreamReader = new InputStreamReader(inputStream, Charset.forName("UTF-8"));
+                // this reads ahead and buffers it so speeds it up
                 BufferedReader reader = new BufferedReader(inputStreamReader);
                 String line = reader.readLine();
                 while (line != null) {
@@ -201,6 +215,10 @@ public class MainActivity extends AppCompatActivity {
          * about the first earthquake from the input earthquakeJSON string.
          */
         private Event extractFeatureFromJson(String earthquakeJSON) {
+            // if the string is empty, do nothing
+            if (earthquakeJSON.isEmpty()) {
+                return null;
+            }
             try {
                 JSONObject baseJsonResponse = new JSONObject(earthquakeJSON);
                 JSONArray featureArray = baseJsonResponse.getJSONArray("features");

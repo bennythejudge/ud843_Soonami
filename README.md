@@ -1,6 +1,8 @@
 Soonami App
 ===========
 
+[![GuardRails badge](https://badges.production.guardrails.io/bennythejudge/ud843_Soonami.svg)](https://www.guardrails.io)
+
 This app displays information about a single earthquake event and
 whether or not there was a tsunami alert issued for it. 
 Used in a Udacity course in the Android Basics Nanodegree.
